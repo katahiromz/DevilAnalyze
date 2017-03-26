@@ -1,0 +1,29 @@
+# Makefile for Borland C++ Compiler 5.5.1
+# USAGE: C:\DevAna> make -f Makefile.bcc32
+##############################################################################
+# This file is public domain software (PDS).
+##############################################################################
+
+DOTOBJ = .obj
+DOTEXE = .exe
+
+DEFS = 
+CXXFLAGS = $(DEFS) -WC
+RCFLAGS = $(DEFS)
+
+HEADERS = \
+
+OBJS = \
+	DevilAnalyze$(DOTOBJ) \
+
+all: DevilAnalyze$(DOTEXE)
+
+DevilAnalyze$(DOTEXE): $(OBJS)
+	bcc32 $(CXXFLAGS) -eDevilAnalyze$(DOTEXE) $(OBJS)
+
+DevilAnalyze$(DOTOBJ): DevilAnalyze.cpp $(HEADERS)
+	bcc32 $(CXXFLAGS) -c DevilAnalyze.cpp
+
+clean:
+	if exist *.obj del *.obj
+	if exist *.tds del *.tds
