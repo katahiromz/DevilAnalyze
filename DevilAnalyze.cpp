@@ -208,6 +208,12 @@ MAPFILEANDCHECKSUMW pMapFileAndCheckSumW = NULL;
     #define MFACS                   "MapFileAndCheckSumA"
 #endif
 
+
+// IsWow64Process
+typedef void (WINAPI *ISWOW64PROCESS)(HANDLE, PBOOL);
+ISWOW64PROCESS pIsWow64Process = NULL;
+#define IW64P "IsWow64Process"
+
 ///////////////////////////////////////////////////////////////////////////////
 
 TCHAR *SpecialPath(INT csidl)
@@ -311,41 +317,28 @@ IS_STR(const WCHAR (&)[len]);
 
 struct TRANS { WORD LangID, CodePage; };
 
-bool dllout(const TCHAR *file)
+const char *GetSCS(DWORD SCS_)
 {
-    if (!set_section(file))
-        return false;
-
-    TCHAR Path[MAX_PATH], *pch;
-    if (!SearchPath(NULL, file, TEXT(".dll"), MAX_PATH, Path, &pch))
+    const char *psz;
+#ifndef SCS_64BIT_BINARY
+    #define SCS_64BIT_BINARY 6
+#endif
+    switch (SCS_)
     {
-        SearchPath(NULL, file, NULL, MAX_PATH, Path, &pch);
+    case SCS_32BIT_BINARY: psz = "SCS_32BIT_BINARY"; break;
+    case SCS_DOS_BINARY: psz = "SCS_DOS_BINARY"; break;
+    case SCS_WOW_BINARY: psz = "SCS_WOW_BINARY"; break;
+    case SCS_PIF_BINARY: psz = "SCS_PIF_BINARY"; break;
+    case SCS_POSIX_BINARY: psz = "SCS_POSIX_BINARY"; break;
+    case SCS_OS216_BINARY: psz = "SCS_OS216_BINARY"; break;
+    case SCS_64BIT_BINARY: psz = "SCS_64BIT_BINARY"; break;
+    default: psz = "(unknown binary type)";
     }
-    POUT(Path);
+    return psz;
+}
 
-    WIN32_FIND_DATA Find;
-    HANDLE hFind = FindFirstFile(Path, &Find);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        POUT(Find.dwFileAttributes);
-        POUT(Find.ftLastWriteTime);
-        POUT(Find.nFileSizeHigh);
-        POUT(Find.nFileSizeLow);
-    }
-    else
-    {
-        FAIL("FindFirstFile");
-    }
-
-    // check sum
-    if (pMapFileAndCheckSum)
-    {
-        DWORD HeaderSum = 0, CheckSum = 0;
-        (*pMapFileAndCheckSum)(Path, &HeaderSum, &CheckSum);
-        POUT(HeaderSum);
-        POUT(CheckSum);
-    }
-
+bool dumpver(const TCHAR *file)
+{
     TCHAR *filename = const_cast<TCHAR *>(file);
     DWORD dwHandle;
     DWORD Size = GetFileVersionInfoSize(filename, &dwHandle);
@@ -407,8 +400,108 @@ bool dllout(const TCHAR *file)
     POUT(pFixedFileInfo->dwFileSubtype);
     POUT(pFixedFileInfo->dwFileDateMS);
     POUT(pFixedFileInfo->dwFileDateLS);
+}
 
-    return true;
+bool exeout(const TCHAR *file)
+{
+    if (!set_section(file))
+        return false;
+
+    TCHAR Path[MAX_PATH], *pch;
+    if (!SearchPath(NULL, file, TEXT(".exe"), MAX_PATH, Path, &pch))
+    {
+        if ((INT_PTR)FindExecutable(file, NULL, Path) <= 32)
+        {
+            FAIL("FindExecutable");
+            return false;
+        }
+    }
+    POUT(Path);
+
+    DWORD SCS_;
+    if (GetBinaryType(Path, &SCS_))
+    {
+        tfout << "File '" << Path << "' is " << GetSCS(SCS_) << '\n';
+    }
+    else
+    {
+        tfout << "File '" << Path << "' is not an executable\n";
+    }
+
+    WIN32_FIND_DATA Find;
+    HANDLE hFind = FindFirstFile(Path, &Find);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        POUT(Find.dwFileAttributes);
+        POUT(Find.ftLastWriteTime);
+        POUT(Find.nFileSizeHigh);
+        POUT(Find.nFileSizeLow);
+    }
+    else
+    {
+        FAIL("FindFirstFile");
+    }
+
+    // check sum
+    if (pMapFileAndCheckSum)
+    {
+        DWORD HeaderSum = 0, CheckSum = 0;
+        (*pMapFileAndCheckSum)(Path, &HeaderSum, &CheckSum);
+        POUT(HeaderSum);
+        POUT(CheckSum);
+    }
+
+    return dumpver(file);
+}
+#define EXEOUT(name)    exeout(TEXT(name))
+
+bool dllout(const TCHAR *file)
+{
+    if (!set_section(file))
+        return false;
+
+    TCHAR Path[MAX_PATH], *pch;
+    if (!SearchPath(NULL, file, TEXT(".dll"), MAX_PATH, Path, &pch))
+    {
+        SearchPath(NULL, file, NULL, MAX_PATH, Path, &pch);
+    }
+    POUT(Path);
+
+    HINSTANCE hDLLInst = LoadLibraryEx(Path, NULL, LOAD_LIBRARY_AS_DATAFILE);
+    if (hDLLInst)
+    {
+        //...
+        FreeLibrary(hDLLInst);
+    }
+    else
+    {
+        tcout << "LoadLibraryEx failed\n";
+    }
+
+    WIN32_FIND_DATA Find;
+    HANDLE hFind = FindFirstFile(Path, &Find);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        POUT(Find.dwFileAttributes);
+        POUT(Find.ftLastWriteTime);
+        POUT(Find.nFileSizeHigh);
+        POUT(Find.nFileSizeLow);
+    }
+    else
+    {
+        FAIL("FindFirstFile");
+    }
+
+    // check sum
+    if (pMapFileAndCheckSum)
+    {
+        DWORD HeaderSum = 0, CheckSum = 0;
+        (*pMapFileAndCheckSum)(Path, &HeaderSum, &CheckSum);
+        POUT(HeaderSum);
+        POUT(CheckSum);
+    }
+
+    return dumpver(file);
 }
 #define DLLOUT(name)    dllout(TEXT(name))
 
@@ -467,6 +560,55 @@ bool DirList(const TCHAR *dir)
 
     SetCurrentDirectory(CurDir);
     return true;
+}
+
+void DumpProcessorArchitecture(WORD wProcessorArchitecture)
+{
+    const char *Architecture = "PROCESSOR_ARCHITECTURE_UNKNOWN";
+    switch (wProcessorArchitecture)
+    {
+    case PROCESSOR_ARCHITECTURE_INTEL: Architecture = "PROCESSOR_ARCHITECTURE_INTEL"; break;
+    case PROCESSOR_ARCHITECTURE_MIPS: Architecture = "PROCESSOR_ARCHITECTURE_MIPS"; break;
+    case PROCESSOR_ARCHITECTURE_ALPHA: Architecture = "PROCESSOR_ARCHITECTURE_ALPHA"; break;
+    case PROCESSOR_ARCHITECTURE_PPC: Architecture = "PROCESSOR_ARCHITECTURE_PPC"; break;
+    case PROCESSOR_ARCHITECTURE_SHX: Architecture = "PROCESSOR_ARCHITECTURE_SHX"; break;
+    case PROCESSOR_ARCHITECTURE_ARM: Architecture = "PROCESSOR_ARCHITECTURE_ARM"; break;
+    case PROCESSOR_ARCHITECTURE_IA64: Architecture = "PROCESSOR_ARCHITECTURE_IA64"; break;
+    case PROCESSOR_ARCHITECTURE_ALPHA64: Architecture = "PROCESSOR_ARCHITECTURE_ALPHA64"; break;
+    case PROCESSOR_ARCHITECTURE_MSIL: Architecture = "PROCESSOR_ARCHITECTURE_MSIL"; break;
+    }
+    POUT(Architecture);
+}
+
+void DumpProcessorType(DWORD dwProcessorType)
+{
+    const char *ProcessorType = "(unknown)";
+    switch (dwProcessorType)
+    {
+    case PROCESSOR_INTEL_386: ProcessorType = "PROCESSOR_INTEL_386"; break;
+    case PROCESSOR_INTEL_486: ProcessorType = "PROCESSOR_INTEL_486"; break;
+    case PROCESSOR_INTEL_PENTIUM: ProcessorType = "PROCESSOR_INTEL_PENTIUM"; break;
+    case PROCESSOR_INTEL_IA64: ProcessorType = "PROCESSOR_INTEL_IA64"; break;
+    case PROCESSOR_MIPS_R4000: ProcessorType = "PROCESSOR_MIPS_R4000"; break;
+    case PROCESSOR_ALPHA_21064: ProcessorType = "PROCESSOR_ALPHA_21064"; break;
+    case PROCESSOR_PPC_601: ProcessorType = "PROCESSOR_PPC_601"; break;
+    case PROCESSOR_PPC_603: ProcessorType = "PROCESSOR_PPC_603"; break;
+    case PROCESSOR_PPC_604: ProcessorType = "PROCESSOR_PPC_604"; break;
+    case PROCESSOR_PPC_620: ProcessorType = "PROCESSOR_PPC_620"; break;
+    case PROCESSOR_HITACHI_SH3: ProcessorType = "PROCESSOR_HITACHI_SH3"; break;
+    case PROCESSOR_HITACHI_SH3E: ProcessorType = "PROCESSOR_HITACHI_SH3E"; break;
+    case PROCESSOR_HITACHI_SH4: ProcessorType = "PROCESSOR_HITACHI_SH4"; break;
+    case PROCESSOR_MOTOROLA_821: ProcessorType = "PROCESSOR_MOTOROLA_821"; break;
+    case PROCESSOR_SHx_SH3: ProcessorType = "PROCESSOR_SHx_SH3"; break;
+    case PROCESSOR_SHx_SH4: ProcessorType = "PROCESSOR_SHx_SH4"; break;
+    case PROCESSOR_STRONGARM: ProcessorType = "PROCESSOR_STRONGARM"; break;
+    case PROCESSOR_ARM720: ProcessorType = "PROCESSOR_ARM720"; break;
+    case PROCESSOR_ARM820: ProcessorType = "PROCESSOR_ARM820"; break;
+    case PROCESSOR_ARM920: ProcessorType = "PROCESSOR_ARM920"; break;
+    case PROCESSOR_ARM_7TDMI: ProcessorType = "PROCESSOR_ARM_7TDMI"; break;
+    case PROCESSOR_OPTIL: ProcessorType = "PROCESSOR_OPTIL"; break;
+    }
+    POUT(ProcessorType);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -547,17 +689,31 @@ int main(int argc, char **argv)
         GetSystemInfo(&SysInfo);
 
         POUT(SysInfo.dwOemId);
+
         POUT(SysInfo.wProcessorArchitecture);
+        DumpProcessorArchitecture(SysInfo.wProcessorArchitecture);
+
         POUT(SysInfo.wReserved);
         POUT(SysInfo.dwPageSize);
         //POUT(SysInfo.lpMinimumApplicationAddress);
         //POUT(SysInfo.lpMaximumApplicationAddress);
         POUT(SysInfo.dwActiveProcessorMask);
         POUT(SysInfo.dwNumberOfProcessors);
+
         POUT(SysInfo.dwProcessorType);
+        DumpProcessorType(SysInfo.dwProcessorType);
+
         POUT(SysInfo.dwAllocationGranularity);
         POUT(SysInfo.wProcessorLevel);
         POUT(SysInfo.wProcessorRevision);
+
+        {
+            DLL kernel32("kernel32");
+            if (kernel32.GetProc(pIsWow64Process, IW64P))
+            {
+                tfout << "IsWow64Process function exists in kernel32.dll.\n";
+            }
+        }
 
         TCHAR WinDir[MAX_PATH];
         GetWindowsDirectory(WinDir, MAX_PATH);
@@ -585,6 +741,7 @@ int main(int argc, char **argv)
         SPECIAL_FOLDER(CSIDL_STARTMENU);
         SPECIAL_FOLDER(CSIDL_FAVORITES);
         SPECIAL_FOLDER(CSIDL_APPDATA);
+
     }
 
     if (CATEGORY("user"))
@@ -693,6 +850,13 @@ int main(int argc, char **argv)
         POUT(MemoryStatus.dwTotalVirtual);
         POUT(MemoryStatus.dwAvailVirtual);
     }
+
+    EXEOUT("notepad");
+    EXEOUT("explorer");
+    EXEOUT("calc");
+    EXEOUT("write");
+    EXEOUT("regedit");
+    EXEOUT("winhlp32");
 
     DLLOUT("kernel32");
     DLLOUT("gdi32");
