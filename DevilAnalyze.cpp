@@ -497,11 +497,13 @@ bool dllout(const TCHAR *file)
     if (hDLLInst)
     {
         LPBYTE pb = (LPBYTE)hDLLInst;
+
         IMAGE_DOS_HEADER *pDOS = (IMAGE_DOS_HEADER *)hDLLInst;
         if (pDOS->e_magic == IMAGE_DOS_SIGNATURE)
         {
             pb += pDOS->e_lfanew;
         }
+
         IMAGE_NT_HEADERS32 *pNT32 = (IMAGE_NT_HEADERS32 *)pb;
         if (pNT32->Signature == IMAGE_NT_SIGNATURE)
         {
