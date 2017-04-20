@@ -402,6 +402,32 @@ bool dumpver(const TCHAR *file)
     POUT(pFixedFileInfo->dwFileDateLS);
 }
 
+const char *GetMachine(WORD wFileHeaderMachine)
+{
+    const char *psz = "IMAGE_FILE_MACHINE_UNKNOWN";
+    switch (wFileHeaderMachine)
+    {
+    case IMAGE_FILE_MACHINE_I386: psz = "IMAGE_FILE_MACHINE_I386"; break;
+    case IMAGE_FILE_MACHINE_R3000: psz = "IMAGE_FILE_MACHINE_R3000"; break;
+    case IMAGE_FILE_MACHINE_R4000: psz = "IMAGE_FILE_MACHINE_R4000"; break;
+    case IMAGE_FILE_MACHINE_R10000: psz = "IMAGE_FILE_MACHINE_R10000"; break;
+    case IMAGE_FILE_MACHINE_WCEMIPSV2: psz = "IMAGE_FILE_MACHINE_WCEMIPSV2"; break;
+    case IMAGE_FILE_MACHINE_ALPHA: psz = "IMAGE_FILE_MACHINE_ALPHA"; break;
+    case IMAGE_FILE_MACHINE_POWERPC: psz = "IMAGE_FILE_MACHINE_POWERPC"; break;
+    case IMAGE_FILE_MACHINE_SH3: psz = "IMAGE_FILE_MACHINE_SH3"; break;
+    case IMAGE_FILE_MACHINE_SH3E: psz = "IMAGE_FILE_MACHINE_SH3E"; break;
+    case IMAGE_FILE_MACHINE_SH4: psz = "IMAGE_FILE_MACHINE_SH4"; break;
+    case IMAGE_FILE_MACHINE_ARM: psz = "IMAGE_FILE_MACHINE_ARM"; break;
+    case IMAGE_FILE_MACHINE_THUMB: psz = "IMAGE_FILE_MACHINE_THUMB"; break;
+    case IMAGE_FILE_MACHINE_IA64: psz = "IMAGE_FILE_MACHINE_IA64"; break;
+    case IMAGE_FILE_MACHINE_MIPS16: psz = "IMAGE_FILE_MACHINE_MIPS16"; break;
+    case IMAGE_FILE_MACHINE_MIPSFPU: psz = "IMAGE_FILE_MACHINE_MIPSFPU"; break;
+    case IMAGE_FILE_MACHINE_MIPSFPU16: psz = "IMAGE_FILE_MACHINE_MIPSFPU16"; break;
+    case IMAGE_FILE_MACHINE_ALPHA64: psz = "IMAGE_FILE_MACHINE_ALPHA64"; break;
+    }
+    return psz;
+}
+
 bool exeout(const TCHAR *file)
 {
     if (!set_section(file))
@@ -470,7 +496,19 @@ bool dllout(const TCHAR *file)
     HINSTANCE hDLLInst = LoadLibraryEx(Path, NULL, LOAD_LIBRARY_AS_DATAFILE);
     if (hDLLInst)
     {
-        //...
+        LPBYTE pb = (LPBYTE)hDLLInst;
+        IMAGE_DOS_HEADER *pDOS = (IMAGE_DOS_HEADER *)hDLLInst;
+        if (pDOS->e_magic == IMAGE_DOS_SIGNATURE)
+        {
+            pb += pDOS->e_lfanew;
+        }
+        IMAGE_NT_HEADERS32 *pNT32 = (IMAGE_NT_HEADERS32 *)pb;
+        if (pNT32->Signature == IMAGE_NT_SIGNATURE)
+        {
+            WORD wFileHeaderMachine = pNT32->FileHeader.Machine;
+            const char *FileHeaderMachine = GetMachine(wFileHeaderMachine);
+            POUT(FileHeaderMachine);
+        }
         FreeLibrary(hDLLInst);
     }
     else
@@ -741,7 +779,6 @@ int main(int argc, char **argv)
         SPECIAL_FOLDER(CSIDL_STARTMENU);
         SPECIAL_FOLDER(CSIDL_FAVORITES);
         SPECIAL_FOLDER(CSIDL_APPDATA);
-
     }
 
     if (CATEGORY("user"))
