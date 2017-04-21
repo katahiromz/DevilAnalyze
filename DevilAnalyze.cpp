@@ -2,11 +2,21 @@
 // This file is public domain software (PDS).
 ///////////////////////////////////////////////////////////////////////////////
 
-#define LOGO \
-    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-    "$ DevilAnalyze v1.1 by Katayama Hirofumi MZ $\n" \
-    "$            katayama.hirofumi.mz@gmail.com $\n" \
-    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+#ifdef _WIN64
+    #define LOGO \
+        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+        "logo: $ DevilAnalyze v1.1 for 64-bit Windows      $\n" \
+        "logo: $ by Katayama Hirofumi MZ                   $\n" \
+        "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+#else
+    #define LOGO \
+        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+        "logo: $ DevilAnalyze v1.1 for 32-bit Windows      $\n" \
+        "logo: $ by Katayama Hirofumi MZ                   $\n" \
+        "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+#endif
 
 #if defined(UNICODE) && !defined(_UNICODE)
     #define _UNICODE
@@ -66,6 +76,7 @@ using namespace std;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
+// text to text
 
 WCHAR *AnsiToWide(const CHAR *pszA)
 {
@@ -96,6 +107,7 @@ CHAR *WideToAnsi(const WCHAR *pszW)
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
+// output stream
 
 #ifdef UNICODE
     template <typename CharT, typename Traits>
@@ -163,9 +175,6 @@ operator<<(basic_ostream<CharT, Traits>& os, const FILETIME& ft)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-tstring         g_section;
-const TCHAR *   g_selected_section = NULL;
-
 class DLL
 {
 public:
@@ -208,12 +217,19 @@ MAPFILEANDCHECKSUMW pMapFileAndCheckSumW = NULL;
     #define MFACS                   "MapFileAndCheckSumA"
 #endif
 
-
 // IsWow64Process
 typedef void (WINAPI *ISWOW64PROCESS)(HANDLE, PBOOL);
 ISWOW64PROCESS pIsWow64Process = NULL;
 #define IW64P "IsWow64Process"
 
+// GetDiskFreeSpaceEx
+typedef BOOL (WINAPI *GETDISKFREESPACEEX)(LPCTSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER);
+GETDISKFREESPACEEX pGetDiskFreeSpaceEx = NULL;
+#ifdef UNICODE
+    #define GDFSE "GetDiskFreeSpaceExW"
+#else
+    #define GDFSE "GetDiskFreeSpaceExA"
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 TCHAR *SpecialPath(INT csidl)
@@ -228,94 +244,6 @@ TCHAR *SpecialPath(INT csidl)
     }
     return NULL;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-#ifdef DEVANA_NO_ERROR_POUT
-    #define FAIL(name) \
-        tcerr << "ERROR: " << g_section << ": " << name << " failed\n";
-#else
-    #define FAIL(name) \
-        tfout << "ERROR: " << g_section << ": " << name << " failed\n"; \
-        tcerr << "ERROR: " << g_section << ": " << name << " failed\n";
-#endif
-
-bool set_section(const tstring& section)
-{
-    g_section = section;
-    if (g_selected_section == NULL ||
-        lstrcmpi(section.c_str(), g_selected_section) == 0)
-    {
-        tfout << "-----------------------\n";
-        return true;
-    }
-    return false;
-}
-#define CATEGORY(cat) set_section(TEXT(cat))
-
-#define NOT_STR(type) bool is_str(type) { return false; }
-NOT_STR(CHAR);
-NOT_STR(BYTE);
-NOT_STR(SHORT);
-NOT_STR(WORD);
-NOT_STR(INT);
-NOT_STR(UINT);
-NOT_STR(LONG);
-NOT_STR(DWORD);
-NOT_STR(LONGLONG);
-NOT_STR(DWORDLONG);
-
-#define IS_STR(type) bool is_str(type) { return true; }
-IS_STR(const CHAR *);
-IS_STR(const WCHAR *);
-IS_STR(const string&);
-IS_STR(const wstring&);
-IS_STR(const ULARGE_INTEGER&);
-IS_STR(const FILETIME&);
-
-template <size_t len>
-IS_STR(const CHAR (&)[len]);
-template <size_t len>
-IS_STR(const WCHAR (&)[len]);
-
-#define POUT(data) do { \
-    tfout << g_section << ": " << #data << ": " << dec; \
-    if (is_str(data)) { tfout << "\""; } \
-    tfout << data; \
-    if (is_str(data)) { tfout << "\""; } \
-    if (!is_str(data)) { tfout << hex << " (0x" << data << ")"; } \
-    tfout << endl; \
-} while (0)
-
-#ifdef DEVANA_NO_ERROR_POUT
-    #define PERR(data) do { \
-        tcerr << "ERROR: " << g_section << ": " << #data << ": " << dec; \
-        if (is_str(data)) { tcerr << "\""; } \
-        tcerr << data; \
-        if (is_str(data)) { tcerr << "\""; } \
-        else { tcerr << hex << " (0x" << data << ")"; } \
-        tcerr << endl; \
-    } while (0)
-#else
-    #define PERR(data) do { \
-        tfout << "ERROR: " << g_section << ": " << #data << ": " << dec; \
-        if (is_str(data)) { tfout << "\""; } \
-        tfout << data; \
-        if (is_str(data)) { tfout << "\""; } \
-        else { tfout << hex << " (0x" << data << ")"; } \
-        tfout << endl; \
-        tcerr << "ERROR: " << g_section << ": " << #data << ": " << dec; \
-        if (is_str(data)) { tcerr << "\""; } \
-        cerr << data; \
-        if (is_str(data)) { tcerr << "\""; } \
-        else { tcerr << hex << " (0x" << data << ")"; } \
-        tcerr << endl; \
-    } while (0)
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-struct TRANS { WORD LangID, CodePage; };
 
 const char *GetSCS(DWORD SCS_)
 {
@@ -337,6 +265,107 @@ const char *GetSCS(DWORD SCS_)
     return psz;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+tstring         g_section;
+const TCHAR *   g_selected_section = NULL;
+
+#ifdef DEVANA_NO_ERROR_POUT
+    #define FAIL(name) \
+        tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
+    #define WARN(name) \
+        tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
+#else
+    #define FAIL(name) \
+        tfout << g_section << ": " << "ERROR: " << name << " failed\n"; \
+        tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
+    #define WARN(name) \
+        tfout << g_section << ": " << "WARNING: " << name << " failed\n"; \
+        tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
+#endif
+
+#define PMSG(msg) \
+    tfout << g_section << ": " << msg << endl;
+
+bool set_section(const tstring& section)
+{
+    g_section = section;
+    if (g_selected_section == NULL ||
+        lstrcmpi(section.c_str(), g_selected_section) == 0)
+    {
+        tfout << "-----------------------\n";
+        return true;
+    }
+    return false;
+}
+#define SECTION(cat) set_section(TEXT(cat))
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define NOT_STR(type) inline bool is_str(type) { return false; }
+NOT_STR(CHAR);
+NOT_STR(BYTE);
+NOT_STR(SHORT);
+NOT_STR(WORD);
+NOT_STR(INT);
+NOT_STR(UINT);
+NOT_STR(LONG);
+NOT_STR(DWORD);
+NOT_STR(LONGLONG);
+NOT_STR(DWORDLONG);
+NOT_STR(const ULARGE_INTEGER&);
+
+#define IS_STR(type) inline bool is_str(type) { return true; }
+IS_STR(const CHAR *);
+IS_STR(const WCHAR *);
+IS_STR(const string&);
+IS_STR(const wstring&);
+IS_STR(const FILETIME&);
+
+template <size_t len>
+IS_STR(const CHAR (&)[len]);
+template <size_t len>
+IS_STR(const WCHAR (&)[len]);
+
+#define POUT(data) do { \
+    tfout << g_section << ": " << #data << ": " << dec; \
+    if (is_str(data)) { tfout << "\""; } \
+    tfout << data; \
+    if (is_str(data)) { tfout << "\""; } \
+    if (!is_str(data)) { tfout << hex << " (0x" << data << ")"; } \
+    tfout << endl; \
+} while (0)
+
+#ifdef DEVANA_NO_ERROR_POUT
+    #define PERR(data) do { \
+        tcerr << g_section << ": " << "ERROR: " << #data << ": " << dec; \
+        if (is_str(data)) { tcerr << "\""; } \
+        tcerr << data; \
+        if (is_str(data)) { tcerr << "\""; } \
+        else { tcerr << hex << " (0x" << data << ")"; } \
+        tcerr << endl; \
+    } while (0)
+#else
+    #define PERR(data) do { \
+        tfout << g_section << ": " << "ERROR: " << #data << ": " << dec; \
+        if (is_str(data)) { tfout << "\""; } \
+        tfout << data; \
+        if (is_str(data)) { tfout << "\""; } \
+        else { tfout << hex << " (0x" << data << ")"; } \
+        tfout << endl; \
+        tcerr << g_section << ": " << "ERROR: " << #data << ": " << dec; \
+        if (is_str(data)) { tcerr << "\""; } \
+        cerr << data; \
+        if (is_str(data)) { tcerr << "\""; } \
+        else { tcerr << hex << " (0x" << data << ")"; } \
+        tcerr << endl; \
+    } while (0)
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+
+struct TRANS { WORD LangID, CodePage; };
+
 bool dumpver(const TCHAR *file)
 {
     TCHAR *filename = const_cast<TCHAR *>(file);
@@ -344,21 +373,24 @@ bool dumpver(const TCHAR *file)
     DWORD Size = GetFileVersionInfoSize(filename, &dwHandle);
     if (!Size)
     {
-        FAIL("GetFileVersionInfoSize");
+        WARN("GetFileVersionInfoSize");
         return false;
     }
+
     vector<BYTE> block(Size);
     if (!GetFileVersionInfo(filename, dwHandle, Size, &block[0]))
     {
-        FAIL("GetFileVersionInfo");
+        WARN("GetFileVersionInfo");
         return false;
     }
+
     VS_FIXEDFILEINFO *pFixedFileInfo;
     UINT Len;
     if (!VerQueryValue(&block[0], TEXT("\\"), (void **)&pFixedFileInfo, &Len))
     {
         FAIL("VerQueryValue(\\)");
     }
+
     TRANS *pTrans;
     if (!VerQueryValue(&block[0], TEXT("\\VarFileInfo\\Translation"), (void **)&pTrans, &Len))
     {
@@ -387,6 +419,7 @@ bool dumpver(const TCHAR *file)
         POUT_SUBBLOCK(ProductName);
         POUT_SUBBLOCK(ProductVersion);
     }
+
     POUT(pFixedFileInfo->dwSignature);
     POUT(pFixedFileInfo->dwStrucVersion);
     POUT(pFixedFileInfo->dwFileVersionMS);
@@ -496,7 +529,7 @@ bool exeout(const TCHAR *file)
     TCHAR Path[MAX_PATH], *pch;
     if ((INT_PTR)FindExecutable(file, NULL, Path) <= 32)
     {
-        FAIL("FindExecutable");
+        WARN("FindExecutable");
         return false;
     }
     POUT(Path);
@@ -511,7 +544,7 @@ bool exeout(const TCHAR *file)
     }
     else
     {
-        POUT("Not an executable");
+        FAIL("Not an executable");
     }
 
     WIN32_FIND_DATA Find;
@@ -551,7 +584,7 @@ bool dllout(const TCHAR *file)
     {
         if (!SearchPath(NULL, file, NULL, MAX_PATH, Path, &pch))
         {
-            FAIL("SearchPath");
+            WARN("SearchPath");
             return false;
         }
     }
@@ -692,12 +725,34 @@ void DumpProcessorType(DWORD dwProcessorType)
     POUT(ProcessorType);
 }
 
+void DumpDriveType(LPCTSTR Drive, UINT uDriveType)
+{
+    tfout << g_section << ": " << Drive << " ";
+
+    const char *pszDriveType;
+    switch (uDriveType)
+    {
+#ifndef DRIVE_NO_ROOT_DIR
+    #define DRIVE_NO_ROOT_DIR 1
+#endif
+    case DRIVE_NO_ROOT_DIR: pszDriveType = "DRIVE_NO_ROOT_DIR"; break;
+    case DRIVE_REMOVABLE: pszDriveType = "DRIVE_REMOVABLE"; break;
+    case DRIVE_FIXED: pszDriveType = "DRIVE_FIXED"; break;
+    case DRIVE_REMOTE: pszDriveType = "DRIVE_REMOTE"; break;
+    case DRIVE_CDROM: pszDriveType = "DRIVE_CDROM"; break;
+    case DRIVE_RAMDISK: pszDriveType = "DRIVE_RAMDISK"; break;
+    default: pszDriveType = "DRIVE_UNKNOWN";
+    }
+    tfout << pszDriveType << endl;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv)
 {
     ios_base::sync_with_stdio(false);
     setlocale(LC_CTYPE, "");
+    DLL kernel32("kernel32");
 
     DLL ImageHlp(TEXT("imagehlp"));
     if (!ImageHlp.GetProc(pMapFileAndCheckSum, MFACS))
@@ -705,7 +760,11 @@ int main(int argc, char **argv)
         tcerr << "WARNING: imagehlp.MapFileAndCheckSumA/W is not available\n";
     }
 
+#ifdef _WIN64
+    string filename = "DATA64.TXT";
+#else
     string filename = "DATA.TXT";
+#endif
 
 #ifndef DEVANA_USE_STDOUT
     tfout.open(filename.c_str());
@@ -717,8 +776,15 @@ int main(int argc, char **argv)
 #endif
     tfout.imbue(locale());
 
-    tfout << LOGO;
-    tfout << GetCommandLine() << '\n';
+    if (SECTION("logo"))
+    {
+        tfout << LOGO;
+    }
+
+    if (SECTION("cmdline"))
+    {
+        POUT(GetCommandLine());
+    }
 
     if (argc >= 2)
     {
@@ -733,7 +799,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (CATEGORY("version"))
+    if (SECTION("version"))
     {
         POUT(GetVersion());
 
@@ -753,7 +819,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (CATEGORY("system"))
+    if (SECTION("system"))
     {
         TCHAR ComputerName[MAX_COMPUTERNAME_LENGTH + 1];
         DWORD size =  MAX_COMPUTERNAME_LENGTH + 1;
@@ -788,12 +854,9 @@ int main(int argc, char **argv)
         POUT(SysInfo.wProcessorLevel);
         POUT(SysInfo.wProcessorRevision);
 
+        if (kernel32.GetProc(pIsWow64Process, IW64P))
         {
-            DLL kernel32("kernel32");
-            if (kernel32.GetProc(pIsWow64Process, IW64P))
-            {
-                tfout << "IsWow64Process function exists in kernel32.dll.\n";
-            }
+            PMSG("IsWow64Process exists");
         }
 
         TCHAR WinDir[MAX_PATH];
@@ -824,7 +887,7 @@ int main(int argc, char **argv)
         SPECIAL_FOLDER(CSIDL_APPDATA);
     }
 
-    if (CATEGORY("user"))
+    if (SECTION("user"))
     {
         TCHAR UserName[256];
         DWORD size = 256;
@@ -844,7 +907,7 @@ int main(int argc, char **argv)
         POUT(GetSystemDefaultLangID());
     }
 
-    if (CATEGORY("time"))
+    if (SECTION("time"))
     {
         SYSTEMTIME SysTime;
         GetSystemTime(&SysTime);
@@ -869,11 +932,23 @@ int main(int argc, char **argv)
         POUT(LocalTime.wMilliseconds);
     }
 
-    if (CATEGORY("disk"))
+    if (SECTION("disk"))
     {
         BOOL bOK;
 
         POUT(GetLogicalDrives());
+
+        DWORD dwDrives = GetLogicalDrives();
+        for (DWORD i = 0; i < 32; ++i)
+        {
+            if (dwDrives & (1 << i))
+            {
+                TCHAR DriveLetter = TEXT('A') + i;
+                TCHAR Drive[] = { DriveLetter, ':', 0 };
+                UINT uDriveType = GetDriveType(Drive);
+                DumpDriveType(Drive, uDriveType);
+            }
+        }
 
         DWORD SectorsPerCluster;
         DWORD BytesPerSector;
@@ -900,12 +975,18 @@ int main(int argc, char **argv)
         ULARGE_INTEGER FreeBytesAvailableToCaller;
         ULARGE_INTEGER TotalNumberOfBytes;
         ULARGE_INTEGER TotalNumberOfFreeBytes;
-        bOK = GetDiskFreeSpaceEx(NULL,
-                                 &FreeBytesAvailableToCaller,
-                                 &TotalNumberOfBytes,
-                                 &TotalNumberOfFreeBytes);
+
+        bOK = FALSE;
+        if (kernel32.GetProc(pGetDiskFreeSpaceEx, GDFSE))
+        {
+            bOK = GetDiskFreeSpaceEx(NULL,
+                                     &FreeBytesAvailableToCaller,
+                                     &TotalNumberOfBytes,
+                                     &TotalNumberOfFreeBytes);
+        }
         if (bOK)
         {
+            PMSG("GetDiskFreeSpaceEx is available");
             POUT(FreeBytesAvailableToCaller);
             POUT(TotalNumberOfBytes);
             POUT(TotalNumberOfFreeBytes);
@@ -916,7 +997,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (CATEGORY("memory"))
+    if (SECTION("memory"))
     {
         MEMORYSTATUS MemoryStatus;
         MemoryStatus.dwLength = sizeof(MemoryStatus);
@@ -1007,11 +1088,11 @@ int main(int argc, char **argv)
     DLLOUT("wsock32");
 
 #ifdef DEVANA_DO_SPY
-    if (argc >= 3 && CATEGORY("tree"))
+    if (argc >= 3 && SECTION("tree"))
     {
         DirList(AnsiToText(argv[2]));
     }
-    if (argc < 3 && CATEGORY("tree"))
+    if (argc < 3 && SECTION("tree"))
     {
         DirList(TEXT("C:\\"));
     }
@@ -1027,23 +1108,23 @@ int main(int argc, char **argv)
 #ifndef CSIDL_FAVORITES
     #define CSIDL_FAVORITES 0x0006
 #endif
-    if (CATEGORY("documents"))
+    if (SECTION("documents"))
     {
         DirList(SpecialPath(CSIDL_PERSONAL));
     }
-    if (CATEGORY("pictures"))
+    if (SECTION("pictures"))
     {
         DirList(SpecialPath(CSIDL_MYPICTURES));
     }
-    if (CATEGORY("music"))
+    if (SECTION("music"))
     {
         DirList(SpecialPath(CSIDL_MYMUSIC));
     }
-    if (CATEGORY("video"))
+    if (SECTION("video"))
     {
         DirList(SpecialPath(CSIDL_MYVIDEO));
     }
-    if (CATEGORY("favorites"))
+    if (SECTION("favorites"))
     {
         DirList(SpecialPath(CSIDL_FAVORITES));
     }

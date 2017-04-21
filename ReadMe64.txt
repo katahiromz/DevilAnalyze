@@ -1,5 +1,5 @@
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-$ DevilAnalyze v1.1 for 32-bit Windows      $
+$ DevilAnalyze v1.1 for 64-bit Windows      $
 $ by Katayama Hirofumi MZ                   $
 $            katayama.hirofumi.mz@gmail.com $
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -8,10 +8,10 @@ DevilAnalyze is a system analyzer for Windows
 software developer. You can use this software to
 analyze the user environment.
 
-If executed, a text file "DATA.TXT" will be 
+If executed, a text file "DATA64.TXT" will be 
 generated as an analyzed result.
 
-Platforms: Windows 98/Me/2000/XP/Vista/7/8.1/10
+Platforms: 64-bit Windows XP/Vista/7/8.1/10
 License: Public Domain
 
 Use this software freely at your own risk.

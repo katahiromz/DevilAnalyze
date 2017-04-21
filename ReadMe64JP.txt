@@ -1,6 +1,6 @@
 ﻿(UTF-8, Japanese)
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-$ DevilAnalyze v1.1 for 32-bit Windows      $
+$ DevilAnalyze v1.1 for 64-bit Windows      $
 $ by Katayama Hirofumi MZ                   $
 $            katayama.hirofumi.mz@gmail.com $
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -9,10 +9,10 @@ DevilAnalyzeは、Windowsのシステムを分析するための、
 ソフトウェア開発者向けの分析ツールです。
 ユーザー環境を分析するのにお使い下さい。
 
-実行すると、「DATA.TXT」というテキストファイルで
+実行すると、「DATA64.TXT」というテキストファイルで
 分析結果が出力されます。
 
-動作環境：Windows 98/Me/2000/XP/Vista/7/8.1/10
+動作環境：64ビットWindows XP/Vista/7/8.1/10
 ライセンス：パブリックドメイン (PDS)
 
 自己責任にてご自由にお使い下さい。
