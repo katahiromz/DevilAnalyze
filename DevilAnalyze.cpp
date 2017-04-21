@@ -400,6 +400,7 @@ bool dumpver(const TCHAR *file)
     POUT(pFixedFileInfo->dwFileSubtype);
     POUT(pFixedFileInfo->dwFileDateMS);
     POUT(pFixedFileInfo->dwFileDateLS);
+    return true;
 }
 
 const char *GetMachine(WORD wFileHeaderMachine)
@@ -434,13 +435,10 @@ bool exeout(const TCHAR *file)
         return false;
 
     TCHAR Path[MAX_PATH], *pch;
-    if (!SearchPath(NULL, file, TEXT(".exe"), MAX_PATH, Path, &pch))
+    if ((INT_PTR)FindExecutable(file, NULL, Path) <= 32)
     {
-        if ((INT_PTR)FindExecutable(file, NULL, Path) <= 32)
-        {
-            FAIL("FindExecutable");
-            return false;
-        }
+        FAIL("FindExecutable");
+        return false;
     }
     POUT(Path);
 
@@ -489,7 +487,11 @@ bool dllout(const TCHAR *file)
     TCHAR Path[MAX_PATH], *pch;
     if (!SearchPath(NULL, file, TEXT(".dll"), MAX_PATH, Path, &pch))
     {
-        SearchPath(NULL, file, NULL, MAX_PATH, Path, &pch);
+        if (!SearchPath(NULL, file, NULL, MAX_PATH, Path, &pch))
+        {
+            FAIL("SearchPath");
+            return false;
+        }
     }
     POUT(Path);
 
@@ -896,45 +898,74 @@ int main(int argc, char **argv)
     EXEOUT("write");
     EXEOUT("regedit");
     EXEOUT("winhlp32");
+    EXEOUT("50comupd");
+    EXEOUT("presetup");
+    EXEOUT("regsvr32");
 
-    DLLOUT("kernel32");
-    DLLOUT("gdi32");
-    DLLOUT("user32");
     DLLOUT("advapi32");
+    DLLOUT("advpack");
+    DLLOUT("asycfilt");
+    DLLOUT("atl");
+    DLLOUT("comcat");
     DLLOUT("comctl32");
     DLLOUT("comdlg32");
-    DLLOUT("shell32");
-    DLLOUT("shlwapi");
-    DLLOUT("imm32");
-
+    DLLOUT("crypt32");
+    DLLOUT("dbghelp");
     DLLOUT("ddraw");
     DLLOUT("dinput");
     DLLOUT("dsound");
-
-    DLLOUT("ole32");
-    DLLOUT("oleaut32");
-    DLLOUT("opengl32");
-    DLLOUT("riched20");
-    DLLOUT("winmm");
-    DLLOUT("msvfw32");
-    DLLOUT("ws2_32");
-    DLLOUT("wsock32");
-    DLLOUT("msimg32");
-    DLLOUT("setupapi");
-    DLLOUT("hlink");
+    DLLOUT("gdi32");
     DLLOUT("glu32");
-    DLLOUT("dbghelp");
+    DLLOUT("hlink");
+    DLLOUT("hlinkprx");
     DLLOUT("imagehlp");
+    DLLOUT("imm32");
+    DLLOUT("inloader");
+    DLLOUT("kernel32");
     DLLOUT("lz32");
     DLLOUT("mapi32");
+    DLLOUT("mfc30");
+    DLLOUT("mfc30loc");
+    DLLOUT("mfc40");
+    DLLOUT("mfc40loc");
+    DLLOUT("mfc42");
+    DLLOUT("mfc42loc");
+    DLLOUT("mfc42u");
     DLLOUT("msi");
+    DLLOUT("msimg32");
+    DLLOUT("msvcirt");
+    DLLOUT("msvcm90");
+    DLLOUT("msvcp100");
+    DLLOUT("msvcp60");
+    DLLOUT("msvcp90");
+    DLLOUT("msvcr100");
+    DLLOUT("msvcr90");
+    DLLOUT("msvcrt");
+    DLLOUT("msvcrt10");
+    DLLOUT("msvcrt20");
+    DLLOUT("msvcrt40");
+    DLLOUT("msvfw32");
+    DLLOUT("ole32");
+    DLLOUT("oleaut32");
+    DLLOUT("olepro32");
+    DLLOUT("opengl32");
+    DLLOUT("riched20");
+    DLLOUT("setupapi");
+    DLLOUT("shell32");
     DLLOUT("shfolder");
+    DLLOUT("shlwapi");
+    DLLOUT("stdole2.tlb");
     DLLOUT("url");
     DLLOUT("urlmon");
+    DLLOUT("user32");
     DLLOUT("version");
+    DLLOUT("w95inf16");
+    DLLOUT("w95inf32");
     DLLOUT("wininet");
+    DLLOUT("winmm");
     DLLOUT("winspool.drv");
-    DLLOUT("crypt32");
+    DLLOUT("ws2_32");
+    DLLOUT("wsock32");
 
 #ifdef DEVANA_DO_SPY
     if (argc >= 3 && CATEGORY("tree"))
