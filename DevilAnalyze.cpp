@@ -271,12 +271,12 @@ tstring         g_section;
 const TCHAR *   g_selected_section = NULL;
 
 #ifdef DEVANA_NO_ERROR_POUT
-    #define FAIL(name) \
+    #define ERR(name) \
         tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
     #define WARN(name) \
         tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
 #else
-    #define FAIL(name) \
+    #define ERR(name) \
         tfout << g_section << ": " << "ERROR: " << name << " failed\n"; \
         tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
     #define WARN(name) \
@@ -284,8 +284,10 @@ const TCHAR *   g_selected_section = NULL;
         tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
 #endif
 
-#define PMSG(msg) \
+inline void MSGOUT(const char *msg)
+{
     tfout << g_section << ": " << msg << endl;
+}
 
 bool set_section(const tstring& section)
 {
@@ -302,7 +304,7 @@ bool set_section(const tstring& section)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define NOT_STR(type) inline bool is_str(type) { return false; }
+#define NOT_STR(type) bool is_str(type) { return false; }
 NOT_STR(CHAR);
 NOT_STR(BYTE);
 NOT_STR(SHORT);
@@ -315,7 +317,7 @@ NOT_STR(LONGLONG);
 NOT_STR(DWORDLONG);
 NOT_STR(const ULARGE_INTEGER&);
 
-#define IS_STR(type) inline bool is_str(type) { return true; }
+#define IS_STR(type) bool is_str(type) { return true; }
 IS_STR(const CHAR *);
 IS_STR(const WCHAR *);
 IS_STR(const string&);
@@ -328,37 +330,37 @@ template <size_t len>
 IS_STR(const WCHAR (&)[len]);
 
 #define POUT(data) do { \
-    tfout << g_section << ": " << #data << ": " << dec; \
-    if (is_str(data)) { tfout << "\""; } \
-    tfout << data; \
-    if (is_str(data)) { tfout << "\""; } \
-    if (!is_str(data)) { tfout << hex << " (0x" << data << ")"; } \
-    tfout << endl; \
+    tfout << g_section << ": " << #data << ": "; \
+    if (is_str(data)) { \
+        tfout << "\"" << data << "\"\n"; \
+    } else { \
+        tfout << dec << data << hex << " (0x" << data << ")\n"; \
+    } \
 } while (0)
 
 #ifdef DEVANA_NO_ERROR_POUT
     #define PERR(data) do { \
-        tcerr << g_section << ": " << "ERROR: " << #data << ": " << dec; \
-        if (is_str(data)) { tcerr << "\""; } \
-        tcerr << data; \
-        if (is_str(data)) { tcerr << "\""; } \
-        else { tcerr << hex << " (0x" << data << ")"; } \
-        tcerr << endl; \
+        tcerr << g_section << ": " << "ERROR: " << #data << ": "; \
+        if (is_str(data)) { \
+            tcerr << "\"" << data << "\"\n"; \
+        } else { \
+            tcerr << dec << data << hex << " (0x" << data << ")\n"; \
+        } \
     } while (0)
 #else
     #define PERR(data) do { \
-        tfout << g_section << ": " << "ERROR: " << #data << ": " << dec; \
-        if (is_str(data)) { tfout << "\""; } \
-        tfout << data; \
-        if (is_str(data)) { tfout << "\""; } \
-        else { tfout << hex << " (0x" << data << ")"; } \
-        tfout << endl; \
-        tcerr << g_section << ": " << "ERROR: " << #data << ": " << dec; \
-        if (is_str(data)) { tcerr << "\""; } \
-        cerr << data; \
-        if (is_str(data)) { tcerr << "\""; } \
-        else { tcerr << hex << " (0x" << data << ")"; } \
-        tcerr << endl; \
+        tcerr << g_section << ": " << "ERROR: " << #data << ": "; \
+        if (is_str(data)) { \
+            tcerr << "\"" << data << "\"\n"; \
+        } else { \
+            tcerr << dec << data << hex << " (0x" << data << ")\n"; \
+        } \
+        tfout << g_section << ": " << "ERROR: " << #data << ": "; \
+        if (is_str(data)) { \
+            tfout << "\"" << data << "\"\n"; \
+        } else { \
+            tfout << dec << data << hex << " (0x" << data << ")\n"; \
+        } \
     } while (0)
 #endif
 
@@ -388,13 +390,13 @@ bool dumpver(const TCHAR *file)
     UINT Len;
     if (!VerQueryValue(&block[0], TEXT("\\"), (void **)&pFixedFileInfo, &Len))
     {
-        FAIL("VerQueryValue(\\)");
+        ERR("VerQueryValue(\\)");
     }
 
     TRANS *pTrans;
     if (!VerQueryValue(&block[0], TEXT("\\VarFileInfo\\Translation"), (void **)&pTrans, &Len))
     {
-        FAIL("VerQueryValue(\\VarFileInfo\\Translation)");
+        ERR("VerQueryValue(\\VarFileInfo\\Translation)");
     }
     else
     {
@@ -402,13 +404,14 @@ bool dumpver(const TCHAR *file)
         POUT(pTrans->CodePage);
         TCHAR SubBlock[256];
 
-#define POUT_SUBBLOCK(subblock) \
-        TCHAR *p##subblock = NULL; \
-        wsprintf(SubBlock, TEXT("\\StringFileInfo\\%04X%04X\\") TEXT(#subblock), pTrans->LangID, pTrans->CodePage); \
-        if (VerQueryValue(&block[0], SubBlock, (void **)&p##subblock, &Len)) \
-        { \
-            POUT(p##subblock); \
-        } \
+#define POUT_SUBBLOCK(subblock) do { \
+    TCHAR *p##subblock = NULL; \
+    wsprintf(SubBlock, TEXT("\\StringFileInfo\\%04X%04X\\") TEXT(#subblock), pTrans->LangID, pTrans->CodePage); \
+    if (VerQueryValue(&block[0], SubBlock, (void **)&p##subblock, &Len)) \
+    { \
+        POUT(p##subblock); \
+    } \
+} while (0)
 
         POUT_SUBBLOCK(CompanyName);
         POUT_SUBBLOCK(FileDescription);
@@ -470,21 +473,21 @@ bool check_file_header(const TCHAR *Path)
         OPEN_EXISTING, 0, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        FAIL("Cannot open the file");
+        ERR("Cannot open the file");
         return false;
     }
 
     DWORD dwSize = GetFileSize(hFile, NULL);
     if (dwSize == INVALID_FILE_SIZE)
     {
-        FAIL("Too large");
+        ERR("Too large");
         CloseHandle(hFile);
         return false;
     }
 
     if (dwSize <= sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS32))
     {
-        FAIL("Too small");
+        ERR("Too small");
         CloseHandle(hFile);
         return false;
     }
@@ -492,7 +495,7 @@ bool check_file_header(const TCHAR *Path)
     hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, dwSize, NULL);
     if (hMapping == NULL)
     {
-        FAIL("Cannot create a file mapping");
+        ERR("Cannot create a file mapping");
         CloseHandle(hFile);
         return false;
     }
@@ -544,7 +547,7 @@ bool exeout(const TCHAR *file)
     }
     else
     {
-        FAIL("Not an executable");
+        ERR("Not an executable");
     }
 
     WIN32_FIND_DATA Find;
@@ -558,7 +561,7 @@ bool exeout(const TCHAR *file)
     }
     else
     {
-        FAIL("FindFirstFile");
+        ERR("FindFirstFile");
     }
 
     // check sum
@@ -603,7 +606,7 @@ bool dllout(const TCHAR *file)
     }
     else
     {
-        FAIL("FindFirstFile");
+        ERR("FindFirstFile");
     }
 
     // check sum
@@ -629,21 +632,21 @@ bool DirList(const TCHAR *dir)
 
     if (dir == NULL)
     {
-        FAIL("dir == NULL");
+        ERR("dir == NULL");
         return false;
     }
 
     GetCurrentDirectory(MAX_PATH, CurDir);
     if (!SetCurrentDirectory(dir))
     {
-        FAIL(tstring(dir) + TEXT(": SetCurrentDirectory"));
+        ERR(tstring(dir) + TEXT(": SetCurrentDirectory"));
         return false;
     }
 
     hFind = FindFirstFile(TEXT("*"), &find);
     if (hFind == INVALID_HANDLE_VALUE)
     {
-        FAIL(tstring(dir) + TEXT(": FindFirstFile"));
+        ERR(tstring(dir) + TEXT(": FindFirstFile"));
         return false;
     }
 
@@ -752,9 +755,9 @@ int main(int argc, char **argv)
 {
     ios_base::sync_with_stdio(false);
     setlocale(LC_CTYPE, "");
-    DLL kernel32("kernel32");
 
-    DLL ImageHlp(TEXT("imagehlp"));
+    DLL kernel32("kernel32"), ImageHlp(TEXT("imagehlp"));
+
     if (!ImageHlp.GetProc(pMapFileAndCheckSum, MFACS))
     {
         tcerr << "WARNING: imagehlp.MapFileAndCheckSumA/W is not available\n";
@@ -815,7 +818,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            FAIL("GetVersionEx");
+            ERR("GetVersionEx");
         }
     }
 
@@ -825,7 +828,7 @@ int main(int argc, char **argv)
         DWORD size =  MAX_COMPUTERNAME_LENGTH + 1;
         if (!GetComputerName(ComputerName, &size))
         {
-            FAIL("GetComputerName");
+            ERR("GetComputerName");
         }
         else
         {
@@ -856,7 +859,7 @@ int main(int argc, char **argv)
 
         if (kernel32.GetProc(pIsWow64Process, IW64P))
         {
-            PMSG("IsWow64Process exists");
+            MSGOUT("IsWow64Process exists");
         }
 
         TCHAR WinDir[MAX_PATH];
@@ -893,7 +896,7 @@ int main(int argc, char **argv)
         DWORD size = 256;
         if (!GetUserName(UserName, &size))
         {
-            FAIL("GetUserName");
+            ERR("GetUserName");
         }
         else
         {
@@ -969,7 +972,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            FAIL("GetDiskFreeSpace");
+            ERR("GetDiskFreeSpace");
         }
 
         ULARGE_INTEGER FreeBytesAvailableToCaller;
@@ -986,14 +989,14 @@ int main(int argc, char **argv)
         }
         if (bOK)
         {
-            PMSG("GetDiskFreeSpaceEx is available");
+            MSGOUT("GetDiskFreeSpaceEx is available");
             POUT(FreeBytesAvailableToCaller);
             POUT(TotalNumberOfBytes);
             POUT(TotalNumberOfFreeBytes);
         }
         else
         {
-            FAIL("GetDiskFreeSpaceEx");
+            ERR("GetDiskFreeSpaceEx");
         }
     }
 
