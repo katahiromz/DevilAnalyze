@@ -1,5 +1,5 @@
 // DevilAnalyze - A Windows System Analyzer by Katayama Hirofumi MZ.
-// This file is public domain software (PDS).
+// License: CC BY
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN64

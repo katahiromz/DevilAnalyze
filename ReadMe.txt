@@ -12,7 +12,6 @@ If executed, a text file "DATA.TXT" will be
 generated as an analyzed result.
 
 Platforms: Windows 98/Me/2000/XP/Vista/7/8.1/10
-License: Public Domain
 
 Use this software freely at your own risk.
 
