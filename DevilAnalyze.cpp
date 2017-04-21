@@ -429,6 +429,65 @@ const char *GetMachine(WORD wFileHeaderMachine)
     return psz;
 }
 
+bool check_file_header(const TCHAR *Path)
+{
+    HANDLE hFile, hMapping;
+
+    hFile = CreateFile(Path, GENERIC_READ, FILE_SHARE_READ, NULL,
+        OPEN_EXISTING, 0, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        FAIL("Cannot open the file");
+        return false;
+    }
+
+    DWORD dwSize = GetFileSize(hFile, NULL);
+    if (dwSize == INVALID_FILE_SIZE)
+    {
+        FAIL("Too large");
+        CloseHandle(hFile);
+        return false;
+    }
+
+    if (dwSize <= sizeof(IMAGE_DOS_HEADER))
+    {
+        FAIL("Too small");
+        CloseHandle(hFile);
+        return false;
+    }
+
+    hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, dwSize, NULL);
+    if (hMapping == NULL)
+    {
+        FAIL("Cannot create a file mapping");
+        CloseHandle(hFile);
+        return false;
+    }
+
+    LPBYTE pb = (LPBYTE)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, dwSize);
+    if (pb)
+    {
+        IMAGE_DOS_HEADER *pDOS = (IMAGE_DOS_HEADER *)pb;
+        if (pDOS->e_magic == IMAGE_DOS_SIGNATURE)
+        {
+            pb += pDOS->e_lfanew;
+        }
+
+        IMAGE_NT_HEADERS *pNT = (IMAGE_NT_HEADERS *)pb;
+        if (pNT->Signature == IMAGE_NT_SIGNATURE)
+        {
+            WORD wFileHeaderMachine = pNT->FileHeader.Machine;
+            const char *FileHeaderMachine = GetMachine(wFileHeaderMachine);
+            POUT(FileHeaderMachine);
+        }
+        UnmapViewOfFile(pb);
+    }
+
+    CloseHandle(hMapping);
+    CloseHandle(hFile);
+    return true;
+}
+
 bool exeout(const TCHAR *file)
 {
     if (!set_section(file))
@@ -442,14 +501,17 @@ bool exeout(const TCHAR *file)
     }
     POUT(Path);
 
-    DWORD SCS_;
-    if (GetBinaryType(Path, &SCS_))
+    check_file_header(Path);
+
+    DWORD dwSCS_;
+    if (GetBinaryType(Path, &dwSCS_))
     {
-        tfout << "File '" << Path << "' is " << GetSCS(SCS_) << '\n';
+        const char *SCS = GetSCS(dwSCS_);
+        POUT(SCS);
     }
     else
     {
-        tfout << "File '" << Path << "' is not an executable\n";
+        POUT("Not an executable");
     }
 
     WIN32_FIND_DATA Find;
@@ -495,30 +557,7 @@ bool dllout(const TCHAR *file)
     }
     POUT(Path);
 
-    HINSTANCE hDLLInst = LoadLibraryEx(Path, NULL, LOAD_LIBRARY_AS_DATAFILE);
-    if (hDLLInst)
-    {
-        LPBYTE pb = (LPBYTE)hDLLInst;
-
-        IMAGE_DOS_HEADER *pDOS = (IMAGE_DOS_HEADER *)hDLLInst;
-        if (pDOS->e_magic == IMAGE_DOS_SIGNATURE)
-        {
-            pb += pDOS->e_lfanew;
-        }
-
-        IMAGE_NT_HEADERS32 *pNT32 = (IMAGE_NT_HEADERS32 *)pb;
-        if (pNT32->Signature == IMAGE_NT_SIGNATURE)
-        {
-            WORD wFileHeaderMachine = pNT32->FileHeader.Machine;
-            const char *FileHeaderMachine = GetMachine(wFileHeaderMachine);
-            POUT(FileHeaderMachine);
-        }
-        FreeLibrary(hDLLInst);
-    }
-    else
-    {
-        tcout << "LoadLibraryEx failed\n";
-    }
+    check_file_header(Path);
 
     WIN32_FIND_DATA Find;
     HANDLE hFind = FindFirstFile(Path, &Find);
