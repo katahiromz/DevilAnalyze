@@ -4,7 +4,7 @@
 
 #define LOGO \
     "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-    "$ DevilAnalyze v1.0 by Katayama Hirofumi MZ $\n" \
+    "$ DevilAnalyze v1.1 by Katayama Hirofumi MZ $\n" \
     "$            katayama.hirofumi.mz@gmail.com $\n" \
     "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
 

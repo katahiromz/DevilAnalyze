@@ -1,6 +1,6 @@
 ﻿(UTF-8, Japanese)
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-$ DevilAnalyze v1.0 by Katayama Hirofumi MZ $
+$ DevilAnalyze v1.1 by Katayama Hirofumi MZ $
 $            katayama.hirofumi.mz@gmail.com $
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
