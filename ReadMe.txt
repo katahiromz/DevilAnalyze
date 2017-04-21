@@ -1,5 +1,5 @@
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-$ DevilAnalyze v1.1 for 32-bit Windows      $
+$ DevilAnalyze v1.2 for 32-bit Windows      $
 $ by Katayama Hirofumi MZ                   $
 $            katayama.hirofumi.mz@gmail.com $
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$

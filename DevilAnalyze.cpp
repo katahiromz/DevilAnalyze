@@ -5,14 +5,14 @@
 #ifdef _WIN64
     #define LOGO \
         "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-        "logo: $ DevilAnalyze v1.1 for 64-bit Windows      $\n" \
+        "logo: $ DevilAnalyze v1.2 for 64-bit Windows      $\n" \
         "logo: $ by Katayama Hirofumi MZ                   $\n" \
         "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
         "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
 #else
     #define LOGO \
         "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-        "logo: $ DevilAnalyze v1.1 for 32-bit Windows      $\n" \
+        "logo: $ DevilAnalyze v1.2 for 32-bit Windows      $\n" \
         "logo: $ by Katayama Hirofumi MZ                   $\n" \
         "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
         "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
