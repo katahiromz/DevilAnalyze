@@ -875,9 +875,9 @@ int main(int argc, char **argv)
 #define SPECIAL_FOLDER(csidl) \
         pch = SpecialPath(csidl); \
         if (pch) { \
-            tfout << g_section << ": " << #csidl << ": " << pch << endl; \
+            tfout << g_section << ": " << #csidl << ": \"" << pch << "\"\n"; \
         } else { \
-            FAIL(#csidl); \
+            WARN(#csidl); \
         }
         SPECIAL_FOLDER(CSIDL_PERSONAL);
         SPECIAL_FOLDER(CSIDL_DESKTOPDIRECTORY);
