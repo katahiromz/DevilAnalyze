@@ -449,7 +449,7 @@ bool check_file_header(const TCHAR *Path)
         return false;
     }
 
-    if (dwSize <= sizeof(IMAGE_DOS_HEADER))
+    if (dwSize <= sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS32))
     {
         FAIL("Too small");
         CloseHandle(hFile);
