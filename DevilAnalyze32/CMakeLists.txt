@@ -77,10 +77,18 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 # Win32
-add_executable(DevilAnalyze32 ../DevilAnalyze.cpp)
-target_link_libraries(DevilAnalyze32 version)
+if (USE_UNICODE)
+    add_executable(DevilAnalyze32U ../DevilAnalyze.cpp)
+    target_link_libraries(DevilAnalyze32U version)
 
-# install the program
-install(TARGETS DevilAnalyze32 DESTINATION bin)
+    # install the program
+    install(TARGETS DevilAnalyze32U DESTINATION bin)
+else()
+    add_executable(DevilAnalyze32 ../DevilAnalyze.cpp)
+    target_link_libraries(DevilAnalyze32 version)
+
+    # install the program
+    install(TARGETS DevilAnalyze32 DESTINATION bin)
+endif
 
 ##############################################################################

@@ -7,8 +7,22 @@
 DOTOBJ = .obj
 DOTEXE = .exe
 
+# Please choose (1) or (2).
+
+##############################################################################
+## (1)
+
 DEFS = -DMBCS -D_MBCS
+SUFFIX=
+
+##############################################################################
+## (2)
+
 #DEFS = -DUNICODE -D_UNICODE
+#SUFFIX=U
+
+##############################################################################
+
 CXXFLAGS = $(DEFS) -WC
 RCFLAGS = $(DEFS)
 
@@ -17,10 +31,10 @@ HEADERS = \
 OBJS = \
 	DevilAnalyze$(DOTOBJ) \
 
-all: DevilAnalyze$(DOTEXE)
+all: DevilAnalyze$(SUFFIX)$(DOTEXE)
 
-DevilAnalyze$(DOTEXE): $(OBJS)
-	bcc32 $(CXXFLAGS) -eDevilAnalyze$(DOTEXE) $(OBJS)
+DevilAnalyze$(SUFFIX)$(DOTEXE): $(OBJS)
+	bcc32 $(CXXFLAGS) -eDevilAnalyze$(SUFFIX)$(DOTEXE) $(OBJS)
 
 DevilAnalyze$(DOTOBJ): DevilAnalyze.cpp $(HEADERS)
 	bcc32 $(CXXFLAGS) -c DevilAnalyze.cpp
