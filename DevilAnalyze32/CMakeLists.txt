@@ -24,6 +24,18 @@ else()
     add_definitions(-DMBCS -D_MBCS)
 endif()
 
+# Use milliseconds?
+option(USE_MSEC "Use milliseconds" OFF)
+if (USE_MSEC)
+    add_definitions(-DEVANA_USE_MSEC)
+endif()
+
+# Use day of week?
+option(USE_DAYOFWEEK "Use day of week" OFF)
+if (USE_DAYOFWEEK)
+    add_definitions(-DDEVANA_USE_DAYOFWEEK)
+endif()
+
 # check build type
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to Debug")

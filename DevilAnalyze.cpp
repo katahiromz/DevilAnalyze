@@ -13,13 +13,13 @@
     #ifdef UNICODE
         #define LOGO \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-            "logo: $ DevilAnalyze v1.3 for 64-bit Windows      $\n" \
+            "logo: $ DevilAnalyze v1.4 for 64-bit Windows      $\n" \
             "logo: $ Unicode version by Katayama Hirofumi MZ   $\n" \
             "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
     #else
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-            "logo: $ DevilAnalyze v1.3 for 64-bit Windows      $\n" \
+            "logo: $ DevilAnalyze v1.4 for 64-bit Windows      $\n" \
             "logo: $ ANSI version by Katayama Hirofumi MZ      $\n" \
             "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
@@ -28,14 +28,14 @@
     #ifdef UNICODE
         #define LOGO \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-            "logo: $ DevilAnalyze v1.3 for 32-bit Windows      $\n" \
+            "logo: $ DevilAnalyze v1.4 for 32-bit Windows      $\n" \
             "logo: $ Unicode version by Katayama Hirofumi MZ   $\n" \
             "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
     #else
         #define LOGO \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-            "logo: $ DevilAnalyze v1.3 for 32-bit Windows      $\n" \
+            "logo: $ DevilAnalyze v1.4 for 32-bit Windows      $\n" \
             "logo: $ ANSI version by Katayama Hirofumi MZ      $\n" \
             "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"

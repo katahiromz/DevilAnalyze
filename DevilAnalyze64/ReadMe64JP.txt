@@ -1,6 +1,6 @@
 ﻿(UTF-8, Japanese)
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-$ DevilAnalyze v1.3 for 64-bit Windows      $
+$ DevilAnalyze v1.4 for 64-bit Windows      $
 $ by Katayama Hirofumi MZ                   $
 $            katayama.hirofumi.mz@gmail.com $
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
