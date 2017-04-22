@@ -9,7 +9,11 @@
 cmake_minimum_required(VERSION 2.4)
 
 # project name and language
-project(DevilAnalyze CXX)
+project(DevilAnalyze32 CXX)
+
+if (NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(FATAL_ERROR "32-bit compiler required.")
+endif()
 
 # check build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -52,10 +56,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 # Win32
-add_executable(DevilAnalyze DevilAnalyze.cpp)
-target_link_libraries(DevilAnalyze version)
+add_executable(DevilAnalyze32 ../DevilAnalyze.cpp)
+target_link_libraries(DevilAnalyze32 version)
 
 # install the program
-install(TARGETS DevilAnalyze DESTINATION bin)
+install(TARGETS DevilAnalyze32 DESTINATION bin)
 
 ##############################################################################
