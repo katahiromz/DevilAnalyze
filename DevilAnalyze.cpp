@@ -18,6 +18,7 @@
             "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
     #else
+        #define LOGO \
             "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
             "logo: $ DevilAnalyze v1.4 for 64-bit Windows      $\n" \
             "logo: $ ANSI version by Katayama Hirofumi MZ      $\n" \
