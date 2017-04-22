@@ -2,22 +2,6 @@
 // License: CC BY
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _WIN64
-    #define LOGO \
-        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-        "logo: $ DevilAnalyze v1.3 for 64-bit Windows      $\n" \
-        "logo: $ by Katayama Hirofumi MZ                   $\n" \
-        "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
-        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
-#else
-    #define LOGO \
-        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
-        "logo: $ DevilAnalyze v1.3 for 32-bit Windows      $\n" \
-        "logo: $ by Katayama Hirofumi MZ                   $\n" \
-        "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
-        "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
-#endif
-
 #if defined(UNICODE) && !defined(_UNICODE)
     #define _UNICODE
 #endif
@@ -25,11 +9,42 @@
     #define UNICODE
 #endif
 
+#ifdef _WIN64
+    #ifdef UNICODE
+        #define LOGO \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+            "logo: $ DevilAnalyze v1.3 for 64-bit Windows      $\n" \
+            "logo: $ Unicode version by Katayama Hirofumi MZ   $\n" \
+            "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+    #else
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+            "logo: $ DevilAnalyze v1.3 for 64-bit Windows      $\n" \
+            "logo: $ ANSI version by Katayama Hirofumi MZ      $\n" \
+            "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+    #endif
+#else
+    #ifdef UNICODE
+        #define LOGO \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+            "logo: $ DevilAnalyze v1.3 for 32-bit Windows      $\n" \
+            "logo: $ Unicode version by Katayama Hirofumi MZ   $\n" \
+            "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+    #else
+        #define LOGO \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n" \
+            "logo: $ DevilAnalyze v1.3 for 32-bit Windows      $\n" \
+            "logo: $ ANSI version by Katayama Hirofumi MZ      $\n" \
+            "logo: $            katayama.hirofumi.mz@gmail.com $\n" \
+            "logo: $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+    #endif
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // Settings
 
-//#define DEVANA_USE_STDOUT     // use standard output
-//#define DEVANA_NO_ERROR_POUT  // doesn't write error messages
 //#define DEVANA_USE_MSEC       // writes milliseconds
 //#define DEVANA_USE_DAYOFWEEK  // writes day of week
 //#define DEVANA_DO_SPY         // do spy? (can be illegal in some countries)
@@ -43,6 +58,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream> 
 #include <vector>
 #include <string>
 #include <locale>
@@ -53,26 +69,61 @@ using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef UNICODE
-    #error Unicode is not supported yet. Please change the project settings.
-#endif
+class OUTFILE
+{
+public:
+    OUTFILE() : m_fp(NULL)
+    {
+    }
+
+    OUTFILE(const TCHAR *FileName) : m_fp(NULL)
+    {
+        open(FileName);
+    }
+
+    bool open(const char *FileName)
+    {
+        m_fp = fopen(FileName, "wb");
+        return is_open();
+    }
+    bool open(const wchar_t *FileName)
+    {
+        m_fp = _wfopen(FileName, L"wb");
+        return is_open();
+    }
+
+    bool is_open() const
+    {
+        return m_fp != NULL;
+    }
+
+    bool write(const void *ptr, size_t size)
+    {
+        return std::fwrite(ptr, size, 1, m_fp) == 1;
+    }
+
+    void close()
+    {
+        std::fclose(m_fp);
+        m_fp = NULL;
+    }
+
+protected:
+    std::FILE *m_fp;
+};
+
+OUTFILE                 fout;
 
 #ifdef UNICODE
-    #define tcout       wcout
-    #define tcerr       wcerr
-    #define tstring     wstring
-    #define tofstream   wofstream
+    wostringstream      ssout;
+    wostringstream      sserr;
+    typedef wstring     tstring;
+    typedef wofstream   tofstream;
 #else
-    #define tcout       cout
-    #define tcerr       cerr
-    #define tstring     string
-    #define tofstream   ofstream
-#endif
-
-#ifdef DEVANA_USE_STDOUT
-    #define tfout       tcout
-#else
-    tofstream           tfout;
+    ostringstream       ssout;
+    ostringstream       sserr;
+    typedef string      tstring;
+    typedef ofstream    tofstream;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -110,16 +161,15 @@ CHAR *WideToAnsi(const WCHAR *pszW)
 // output stream
 
 #ifdef UNICODE
-    template <typename CharT, typename Traits>
-    basic_ostream<CharT, Traits>&
-    operator<<(basic_ostream<CharT, Traits>& os, const string& str)
+    template <typename Traits>
+    basic_ostream<wchar_t, Traits>&
+    operator<<(basic_ostream<wchar_t, Traits>& os, const string& str)
     {
         return os << AnsiToWide(str.c_str());
     }
 #else
-    template <typename CharT, typename Traits>
-    basic_ostream<CharT, Traits>&
-    operator<<(basic_ostream<CharT, Traits>& os, const wstring& str)
+    basic_ostream<char>&
+    operator<<(basic_ostream<char>& os, const wstring& str)
     {
         return os << WideToAnsi(str.c_str());
     }
@@ -270,35 +320,40 @@ const char *GetSCS(DWORD SCS_)
 tstring         g_section;
 const TCHAR *   g_selected_section = NULL;
 
-#ifdef DEVANA_NO_ERROR_POUT
-    #define ERR(name) \
-        tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
-    #define WARN(name) \
-        tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
-#else
-    #define ERR(name) \
-        tfout << g_section << ": " << "ERROR: " << name << " failed\n"; \
-        tcerr << g_section << ": " << "ERROR: " << name << " failed\n";
-    #define WARN(name) \
-        tfout << g_section << ": " << "WARNING: " << name << " failed\n"; \
-        tcerr << g_section << ": " << "WARNING: " << name << " failed\n";
-#endif
+#define ERR(name) \
+    sserr << g_section << ": " << "ERROR: " << name << " failed\n";
+#define WARN(name) \
+    sserr << g_section << ": " << "WARNING: " << name << " failed\n";
 
 inline void MSGOUT(const char *msg)
 {
-    tfout << g_section << ": " << msg << endl;
+    ssout << g_section << ": " << msg << endl;
 }
 
 bool set_section(const tstring& section)
 {
-    g_section = section;
-    if (g_selected_section == NULL ||
-        lstrcmpi(section.c_str(), g_selected_section) == 0)
+#ifdef UNICODE
+    fout.write(ssout.str().c_str(), ssout.str().size() * sizeof(WCHAR));
+    wcerr << sserr.str();
+#else
+    fout.write(ssout.str().c_str(), ssout.str().size() * sizeof(CHAR));
+    cerr << sserr.str();
+#endif
+    ssout.str(TEXT(""));
+    sserr.str(TEXT(""));
+
+    if (section.size())
     {
-        tfout << "-----------------------\n";
-        return true;
+        g_section = section;
+        if (g_selected_section == NULL ||
+            lstrcmpi(section.c_str(), g_selected_section) == 0)
+        {
+            ssout << "-----------------------\n";
+            return true;
+        }
+        return false;
     }
-    return false;
+    return true;
 }
 #define SECTION(cat) set_section(TEXT(cat))
 
@@ -330,39 +385,22 @@ template <size_t len>
 IS_STR(const WCHAR (&)[len]);
 
 #define POUT(data) do { \
-    tfout << g_section << ": " << #data << ": "; \
+    ssout << g_section << ": " << #data << ": "; \
     if (is_str(data)) { \
-        tfout << "\"" << data << "\"\n"; \
+        ssout << "\"" << data << "\"\n"; \
     } else { \
-        tfout << dec << data << hex << " (0x" << data << ")\n"; \
+        ssout << dec << data << hex << " (0x" << data << ")\n"; \
     } \
 } while (0)
 
-#ifdef DEVANA_NO_ERROR_POUT
-    #define PERR(data) do { \
-        tcerr << g_section << ": " << "ERROR: " << #data << ": "; \
-        if (is_str(data)) { \
-            tcerr << "\"" << data << "\"\n"; \
-        } else { \
-            tcerr << dec << data << hex << " (0x" << data << ")\n"; \
-        } \
-    } while (0)
-#else
-    #define PERR(data) do { \
-        tcerr << g_section << ": " << "ERROR: " << #data << ": "; \
-        if (is_str(data)) { \
-            tcerr << "\"" << data << "\"\n"; \
-        } else { \
-            tcerr << dec << data << hex << " (0x" << data << ")\n"; \
-        } \
-        tfout << g_section << ": " << "ERROR: " << #data << ": "; \
-        if (is_str(data)) { \
-            tfout << "\"" << data << "\"\n"; \
-        } else { \
-            tfout << dec << data << hex << " (0x" << data << ")\n"; \
-        } \
-    } while (0)
-#endif
+#define PERR(data) do { \
+    sserr << g_section << ": " << "ERROR: " << #data << ": "; \
+    if (is_str(data)) { \
+        sserr << "\"" << data << "\"\n"; \
+    } else { \
+        sserr << dec << data << hex << " (0x" << data << ")\n"; \
+    } \
+} while (0)
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -664,7 +702,7 @@ bool DirList(const TCHAR *dir)
         uli.LowPart = find.nFileSizeLow;
         uli.HighPart = find.nFileSizeHigh;
 
-        tfout << Path << "\t0x" << hex << find.dwFileAttributes << "\t" <<
+        ssout << Path << "\t0x" << hex << find.dwFileAttributes << "\t" <<
                 find.ftLastWriteTime << "\t" << dec << uli.QuadPart << "\n";
 
         if (find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -730,7 +768,7 @@ void DumpProcessorType(DWORD dwProcessorType)
 
 void DumpDriveType(LPCTSTR Drive, UINT uDriveType)
 {
-    tfout << g_section << ": " << Drive << " ";
+    ssout << g_section << ": " << Drive << " ";
 
     const char *pszDriveType;
     switch (uDriveType)
@@ -746,7 +784,7 @@ void DumpDriveType(LPCTSTR Drive, UINT uDriveType)
     case DRIVE_RAMDISK: pszDriveType = "DRIVE_RAMDISK"; break;
     default: pszDriveType = "DRIVE_UNKNOWN";
     }
-    tfout << pszDriveType << endl;
+    ssout << pszDriveType << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -756,11 +794,11 @@ int main(int argc, char **argv)
     ios_base::sync_with_stdio(false);
     setlocale(LC_CTYPE, "");
 
-    DLL kernel32("kernel32"), ImageHlp(TEXT("imagehlp"));
+    DLL kernel32(TEXT("kernel32")), ImageHlp(TEXT("imagehlp"));
 
     if (!ImageHlp.GetProc(pMapFileAndCheckSum, MFACS))
     {
-        tcerr << "WARNING: imagehlp.MapFileAndCheckSumA/W is not available\n";
+        sserr << "WARNING: imagehlp.MapFileAndCheckSumA/W is not available\n";
     }
 
 #ifdef _WIN64
@@ -769,19 +807,17 @@ int main(int argc, char **argv)
     string filename = "DATA.TXT";
 #endif
 
-#ifndef DEVANA_USE_STDOUT
-    tfout.open(filename.c_str());
-    if (!tfout.is_open())
+    fout.open(filename.c_str());
+    if (!fout.is_open())
     {
-        tcerr << "ERROR: I cannot open the file" << filename << endl;
+        sserr << "ERROR: I cannot open the file" << filename << endl;
+        SECTION("");
         return 1;
     }
-#endif
-    tfout.imbue(locale());
 
     if (SECTION("logo"))
     {
-        tfout << LOGO;
+        ssout << LOGO;
     }
 
     if (SECTION("cmdline"))
@@ -794,6 +830,7 @@ int main(int argc, char **argv)
         if (GetFileAttributesA(argv[1]) != 0xFFFFFFFF)
         {
             dllout(AnsiToText(argv[1]));
+            SECTION("");
             return 0;
         }
         else
@@ -878,7 +915,7 @@ int main(int argc, char **argv)
 #define SPECIAL_FOLDER(csidl) \
         pch = SpecialPath(csidl); \
         if (pch) { \
-            tfout << g_section << ": " << #csidl << ": \"" << pch << "\"\n"; \
+            ssout << g_section << ": " << #csidl << ": \"" << pch << "\"\n"; \
         } else { \
             WARN(#csidl); \
         }
@@ -1132,6 +1169,8 @@ int main(int argc, char **argv)
         DirList(SpecialPath(CSIDL_FAVORITES));
     }
 #endif  // def DEVANA_DO_SPY
+
+    SECTION("");
 
     return 0;
 }

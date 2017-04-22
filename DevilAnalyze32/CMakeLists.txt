@@ -11,8 +11,17 @@ cmake_minimum_required(VERSION 2.4)
 # project name and language
 project(DevilAnalyze32 CXX)
 
+# 32-bit compiler
 if (NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
     message(FATAL_ERROR "32-bit compiler required.")
+endif()
+
+# Unicode build?
+option(USE_UNICODE "Build as Unicode application" OFF)
+if (USE_UNICODE)
+    add_definitions(-DUNICODE -D_UNICODE)
+else()
+    add_definitions(-DMBCS -D_MBCS)
 endif()
 
 # check build type
